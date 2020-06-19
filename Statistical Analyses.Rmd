@@ -1,0 +1,134 @@
+---
+title: "Statistical Analyses"
+author: "PJKA"
+date: "19/06/2020"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+#Setup
+
+##Install Packages and Import Data
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Load required libraries
+library(tidyverse)
+library(vegan)
+library(ggfortify)
+library(rcartocolor)
+library(patchwork)
+library(EcolUtils)
+
+
+#Import original dataset from .csv
+EnvDOM_v2<- read.csv("Aukes et al LO Letters Dataset.csv")
+
+#Average values so only one value per site:
+avg_all2 <- EnvDOM_v2 %>%
+  select("Env", "Location","Ecozone","Area","Type","LocType","Sample", "DOC","Hphi","BP","HS","BB","LMWN","LMWA","SUVA") %>%
+  group_by(Env, Location,Ecozone,Area,Type,LocType,Sample) %>%
+  summarise_all(mean) %>%
+  ungroup()
+```
+
+##Conform Database  
+
+Based on previous analyses, we are removing high-organic subsurface samples as they skew the analysis (i.e.: we know they are different so lets remove them for now and see how all the other samples compare).  
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+pca_avg_all2 <- avg_all2 %>%
+                  filter(Type != 'Wet. Subsurface')
+
+#Create a dataframe to recalculate LC-OCD output so eluted components are proportions of overall eluted DOM (mgC/L) concentration
+#select parameters:
+pca_avg_all2 <- pca_avg_all2 %>%
+  transmute(Env = Env,
+            Location = Location,
+            Ecozone = Ecozone,
+            Area = Area,
+            Type = Type,
+            LocType = LocType,
+            Sample = Sample,
+            DOC = DOC,
+            BP = BP/Hphi,
+            HS = HS/Hphi,
+            BB = BB/Hphi,
+            LMWN = LMWN/Hphi,
+            LMWA = LMWA/Hphi)
+
+```
+
+##Statistical Analyses
+###Create PCA
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#Create a matrix of LC-OCD proportions for input into PCA 
+lcocd.matrix <-pca_avg_all2[,9:13]
+
+#run PCA
+lcocd.pca<- prcomp(lcocd.matrix, center=TRUE, scale.=TRUE)
+
+#look at output of PCA
+summary(lcocd.pca)
+screeplot(lcocd.pca, type="lines")
+
+#create vectors to associate 'rows' with actual sample information
+lcocd.pca.Env<-pca_avg_all2[,1]
+lcocd.pca.Location<-pca_avg_all2[,2]
+lcocd.pca.Ecozone<-pca_avg_all2[,3]
+lcocd.pca.Type<-pca_avg_all2[,5]
+lcocd.pca.LocType<-pca_avg_all2[,6]
+lcocd.pca.Sample<-pca_avg_all2[,7]
+
+#Associated statistics for PCA
+#To see loadings:
+lcocd.pca$rotation
+
+#To see individual sample scores:
+lcocd.pca$x
+
+#To get eigenvalues:
+lcocd.pca$sdev^2
+
+#this package offers a nice way to obtain correlation between variables and PC
+library(FactoMineR)
+lcocd.pca2 <- PCA(lcocd.matrix)
+
+#eigenvalue:
+lcocd.pca2$eig
+
+#corr b/w variables and PC
+lcocd.pca2$var$coord
+```
+
+###Plot PCA
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+autoplot(lcocd.pca, scale = 0, 
+         data=pca_avg_all2, 
+         fill = 'Type', shape= 'Ecozone', size =2,
+         loadings=TRUE, loadings.colour = 'blue',
+         loadings.label= TRUE, loadings.label.colour = 'black',loadings.label.size=3)+
+  scale_fill_carto_d(palette = 'Vivid')+
+  scale_shape_manual(values=c(21,24,23,22,25))+
+  guides(fill= guide_legend(override.aes = list(shape=21)) )+
+  theme_bw()+
+  theme(panel.grid = element_blank())
+```
+
+###PERMANOVA Calculation
+
+Here we ask whether hydrologic compartments are significantly different:
+
+```{r}
+adonis2(lcocd.matrix ~ Type, data = pca_avg_all2, permutations = 999, method='euclidean', strata='Ecozone')
+```
+
+As the p-value<0.01, we reject the null hypothesis and can say that there is a significant difference in DOM composition between hydrologic compartments.
+
+###Post hoc comparisons
+
+The PERMANOVA indicates that there are statistical differences, but does not show where. Here we conduct a pairwise a postereri test to show significance between means of different hydrologic compartments using a Dunn's Test.
+
+```{r}
+#Using EcolUtils package
+adonis.pair(vegdist(pca_avg_all2[,9:13]), as.factor(pca_avg_all2$Type), corr.method = 'bonferroni', nper = 8000)
+```
