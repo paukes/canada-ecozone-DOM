@@ -116,17 +116,17 @@ autoplot(lcocd.pca, scale = 0,
 
 ###PERMANOVA Calculation
 
-Here we ask whether hydrologic compartments are significantly different:
+Here we ask whether water body types are significantly different:
 
 ```{r}
 adonis2(lcocd.matrix ~ Type, data = pca_avg_all2, permutations = 999, method='euclidean', strata='Ecozone')
 ```
 
-As the p-value<0.01, we reject the null hypothesis and can say that there is a significant difference in DOM composition between hydrologic compartments.
+As the p-value<0.01, we reject the null hypothesis and can say that there is a significant difference in DOM composition between water body types.
 
 ###Post hoc comparisons
 
-The PERMANOVA indicates that there are statistical differences, but does not show where. Here we conduct a pairwise a postereri test to show significance between means of different hydrologic compartments using a Dunn's Test.
+The PERMANOVA indicates that there are statistical differences, but does not show where. Here we conduct a pairwise a postereri test to show significance between means of different water body types using a Dunn's Test.
 
 ```{r}
 #Using EcolUtils package
