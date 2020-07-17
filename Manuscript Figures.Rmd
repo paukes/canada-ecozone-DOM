@@ -1,7 +1,6 @@
 ---
 title: "Manuscript Figures"
 author: "PJKA"
-date: "19/06/2020"
 output: github_document
 editor_options: 
   chunk_output_type: console
