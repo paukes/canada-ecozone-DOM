@@ -1,15 +1,12 @@
----
-title: "Manuscript Figures"
-author: "PJKA"
-output: github_document
-editor_options: 
-  chunk_output_type: console
----
+Manuscript Figures
+================
+PJKA
+
 # Setup
 
 ## Install Packages and Import Data
 
-```{r, message=FALSE, warning=FALSE}
+``` r
 #Load required libraries
 library(tidyverse)
 library(patchwork)
@@ -37,10 +34,12 @@ EnvDOM_lit<- read.csv("Aukes-DOM_Comp_lit_search-dataset.csv")
 # Manuscript Figures
 
 ## Figure 1 - Site Location
+
 This was completed using Adobe Illustrator CS6.
 
 ## Figure 2 - DOM (mg C/L) and SUVA
-```{r, warning=FALSE}
+
+``` r
 #FIG2A:
 fig2a <-
   ggplot(avg_all %>%
@@ -90,8 +89,11 @@ fig2b <-
 (fig2a)/(fig2b)
 ```
 
+![](Manuscript-Figures_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
 ## Figure 3 - LC-OCD Fractions vs Hydrological Compartment
-```{r, warning=FALSE}
+
+``` r
 fig3a <-   {
 ggplot(avg_all %>%
          mutate(Ecozone = factor(Ecozone, levels=c("Southern Arctic","Taiga Shield","Boreal Shield","Mixedwood Plains","Atlantic Maritime"))),
@@ -218,16 +220,30 @@ ggplot(avg_all %>%
 (fig3a)/(fig3b)/(fig3c)/(fig3d)/(fig3e)
 ```
 
-## Figure 4 - PCA Plot
-Analysis and figure can be found in the Rmd Document 'Statistical Analyses'.
+![](Manuscript-Figures_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
+## Figure 4 - PCA Plot
+
+Analysis and figure can be found in the Rmd Document ‘Statistical
+Analyses’.
 
 # Supplementary Figures
 
 ## Figure S1 - All Samples vs Averaged by Site (data used in this paper)
-```{r, warning=FALSE}
+
+``` r
 #Compare boxplots of LC-OCD b/w all samples (left) and averaged samples (right)
 library(cowplot)
+```
+
+    ## 
+    ## Attaching package: 'cowplot'
+
+    ## The following object is masked from 'package:patchwork':
+    ## 
+    ##     align_plots
+
+``` r
 #for BP:
 {
 bp_a <-
@@ -391,8 +407,11 @@ ggdraw()+
   draw_plot(lmwa_compare, x = 0, y = 0, width = 1, height =0.2)
 ```
 
+![](Manuscript-Figures_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
 ## Figure S2 - PCA with all Water Body Types
-```{r, warning=FALSE}
+
+``` r
 #Create a matrix of LC-OCD proportions for input into PCA 
 supp.matrix <- avg_all %>%
   transmute(Env = Env,
@@ -413,8 +432,21 @@ supp.pca<- prcomp(supp.matrix[,8:12], center=TRUE, scale.=TRUE)
 
 #look at output of PCA
 summary(supp.pca)
-screeplot(supp.pca, type="lines")
+```
 
+    ## Importance of components:
+    ##                           PC1    PC2    PC3    PC4     PC5
+    ## Standard deviation     1.3441 1.0720 1.0463 0.9740 0.02689
+    ## Proportion of Variance 0.3613 0.2298 0.2190 0.1897 0.00014
+    ## Cumulative Proportion  0.3613 0.5912 0.8101 0.9999 1.00000
+
+``` r
+screeplot(supp.pca, type="lines")
+```
+
+![](Manuscript-Figures_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
 #Plot PCA
 library(rcartocolor)
 autoplot(supp.pca, scale = 0, 
@@ -427,3 +459,6 @@ autoplot(supp.pca, scale = 0,
   guides(fill= guide_legend(override.aes = list(shape=21)) )+
   theme_bw()+
   theme(panel.grid = element_blank())
+```
+
+![](Manuscript-Figures_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
