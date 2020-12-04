@@ -1,14 +1,12 @@
 README
 ================
-PJKA
-17/07/2020
 
 # DOM Composition Across Canadian Ecozones - Associated Code
 
 *Aukes PJK, Schiff SL, Venkiteswaran JJ, Elgood RJ. Spoelstra J. 2020.
-Water-Body Type is More Important than Ecozone in Size-Based
-Characterization of Freshwater Dissolved Organic Matter across Canada.
-bioRxiv 2020.04.03.024174 doi:
+Size-Based Characterization of Freshwater Dissolved Organic Matter finds
+Similarities within a Water Body Type across Different Canadian
+Ecozones. bioRxiv 2020.04.03.024174 doi:
 <https://doi.org/10.1101/2020.04.03.024174>*
 
 This repository contains the R code for the statistical analyses and
@@ -26,7 +24,7 @@ map) from manuscript.
 
 #### ‘Statistical Analyses.Rmd’
 
-A walkthrough of the statistical analyses used in the manuscript.
+A walk-through of the statistical analyses used in the manuscript.
 Includes all R libraries and code used to run stats.
 
 # Contact
