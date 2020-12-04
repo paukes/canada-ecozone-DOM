@@ -5,11 +5,11 @@ output: github_document
 editor_options: 
   chunk_output_type: console
 ---
-#Setup
+# Setup
 
-##Install Packages and Import Data
+## Install Packages and Import Data
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE}
 #Load required libraries
 library(tidyverse)
 library(vegan)
@@ -19,32 +19,37 @@ library(patchwork)
 library(EcolUtils)
 
 
-#Import original dataset from .csv
-EnvDOM_v2<- read.csv("Aukes et al LO Letters Dataset.csv")
+#Import dataset file from WLU Dataverse
+EnvDOM <- read.csv("Aukes-DOM_Comp_Data-dataset.csv")
 
-#Average values so only one value per site:
-avg_all2 <- EnvDOM_v2 %>%
-  select("Env", "Location","Ecozone","Area","Type","LocType","Sample", "DOC","Hphi","BP","HS","BB","LMWN","LMWA","SUVA") %>%
-  group_by(Env, Location,Ecozone,Area,Type,LocType,Sample) %>%
+#Average samples to result in one value per sampling site
+avg_all <- EnvDOM %>%
+  select("Env", "Location","Ecozone","Type","LocType","Sample", "DOC","Hphi","BP","HS","BB","LMWN","LMWA","SUVA") %>%
+  group_by(Env, Location,Ecozone,Type,LocType,Sample) %>%
   summarise_all(mean) %>%
   ungroup()
+
+#Rename 'Groundwater' to 'Groundwater'
+avg_all <- avg_all %>%
+  mutate(Type = replace(Type, Type=='Subsurface', 'Groundwater'),
+         Type = replace(Type, Type=='Wet. Subsurface', 'Wet. Groundwater'))
+
 ```
 
-##Conform Database  
+## Conform Database  
 
 Based on previous analyses, we are removing high-organic subsurface samples as they skew the analysis (i.e.: we know they are different so lets remove them for now and see how all the other samples compare).  
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-pca_avg_all2 <- avg_all2 %>%
-                  filter(Type != 'Wet. Subsurface')
+```{r, message=FALSE, warning=FALSE}
+pca_avg_all <- avg_all %>%
+                  filter(Type != 'Wet. Groundwater')
 
 #Create a dataframe to recalculate LC-OCD output so eluted components are proportions of overall eluted DOM (mgC/L) concentration
 #select parameters:
-pca_avg_all2 <- pca_avg_all2 %>%
+pca_avg_all <- pca_avg_all %>%
   transmute(Env = Env,
             Location = Location,
             Ecozone = Ecozone,
-            Area = Area,
             Type = Type,
             LocType = LocType,
             Sample = Sample,
@@ -57,11 +62,11 @@ pca_avg_all2 <- pca_avg_all2 %>%
 
 ```
 
-##Statistical Analyses
-###Create PCA
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+## Statistical Analyses
+### Create PCA
+```{r, warning=FALSE}
 #Create a matrix of LC-OCD proportions for input into PCA 
-lcocd.matrix <-pca_avg_all2[,9:13]
+lcocd.matrix <-pca_avg_all[,8:12]
 
 #run PCA
 lcocd.pca<- prcomp(lcocd.matrix, center=TRUE, scale.=TRUE)
@@ -71,12 +76,12 @@ summary(lcocd.pca)
 screeplot(lcocd.pca, type="lines")
 
 #create vectors to associate 'rows' with actual sample information
-lcocd.pca.Env<-pca_avg_all2[,1]
-lcocd.pca.Location<-pca_avg_all2[,2]
-lcocd.pca.Ecozone<-pca_avg_all2[,3]
-lcocd.pca.Type<-pca_avg_all2[,5]
-lcocd.pca.LocType<-pca_avg_all2[,6]
-lcocd.pca.Sample<-pca_avg_all2[,7]
+lcocd.pca.Env<-pca_avg_all[,1]
+lcocd.pca.Location<-pca_avg_all[,2]
+lcocd.pca.Ecozone<-pca_avg_all[,3]
+lcocd.pca.Type<-pca_avg_all[,4]
+lcocd.pca.LocType<-pca_avg_all[,5]
+lcocd.pca.Sample<-pca_avg_all[,6]
 
 #Associated statistics for PCA
 #To see loadings:
@@ -99,10 +104,10 @@ lcocd.pca2$eig
 lcocd.pca2$var$coord
 ```
 
-###Plot PCA
-```{r, warning=FALSE, echo=FALSE, message=FALSE}
+### Plot PCA
+```{r, message=FALSE, warning=FALSE}
 autoplot(lcocd.pca, scale = 0, 
-         data=pca_avg_all2, 
+         data=pca_avg_all, 
          fill = 'Type', shape= 'Ecozone', size =2,
          loadings=TRUE, loadings.colour = 'blue',
          loadings.label= TRUE, loadings.label.colour = 'black',loadings.label.size=3)+
@@ -113,21 +118,21 @@ autoplot(lcocd.pca, scale = 0,
   theme(panel.grid = element_blank())
 ```
 
-###PERMANOVA Calculation
+### PERMANOVA Calculation
 
-Here we ask whether water body types are significantly different:
+Here we ask whether water body type is significantly different. We do not have a fully balanced design to assess the interaction of 'Ecozone', but instead nest it within the function: 
 
-```{r}
-adonis2(lcocd.matrix ~ Type, data = pca_avg_all2, permutations = 999, method='euclidean', strata='Ecozone')
+```{r, warning=FALSE}
+adonis2(lcocd.matrix ~ Type, data = pca_avg_all, permutations = 999, method='euclidean', strata='Ecozone')
 ```
 
 As the p-value<0.01, we reject the null hypothesis and can say that there is a significant difference in DOM composition between water body types.
 
-###Post hoc comparisons
+### Post hoc comparisons
 
 The PERMANOVA indicates that there are statistical differences, but does not show where. Here we conduct a pairwise a postereri test to show significance between means of different water body types using a Dunn's Test.
 
-```{r}
+```{r, warning=FALSE}
 #Using EcolUtils package
-adonis.pair(vegdist(pca_avg_all2[,9:13]), as.factor(pca_avg_all2$Type), corr.method = 'bonferroni', nper = 8000)
+adonis.pair(vegdist(pca_avg_all[,8:12]), as.factor(pca_avg_all$Type), corr.method = 'bonferroni', nper = 8000)
 ```
